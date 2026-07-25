@@ -1,6 +1,6 @@
 # Daily Invoicer Android Application
 
-[![Android Build CI/CD](https://github.com/OWNER/daily-invoicer-app/actions/workflows/android.yml/badge.svg)](https://github.com/OWNER/daily-invoicer-app/actions/workflows/android.yml)
+[![Android Build CI/CD](https://github.com/devvrushabh/daily-invoicer-app/actions/workflows/android.yml/badge.svg)](https://github.com/devvrushabh/daily-invoicer-app/actions/workflows/android.yml)
 
 A modern, high-performance Android application for daily invoice generation, management, PDF export, and payment gateway integration.
 
@@ -30,7 +30,7 @@ A modern, high-performance Android application for daily invoice generation, man
 ### In Android Studio
 1. Clone repository:
    ```bash
-   git clone https://github.com/YOUR_GITHUB_USERNAME/daily-invoicer-app.git
+   git clone https://github.com/devvrushabh/daily-invoicer-app.git
    ```
 2. Open project in **Android Studio**.
 3. Sync Gradle project files.
