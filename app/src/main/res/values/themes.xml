@@ -6,4 +6,12 @@
         <item name="colorOnPrimary">@color/white</item>
         <item name="android:statusBarColor">@color/primary_dark</item>
     </style>
+
+    <style name="Theme.DailyInvoicer.Splash" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowActionBar">false</item>
+        <item name="android:windowFullscreen">true</item>
+        <item name="android:statusBarColor">@color/splash_bg_start</item>
+        <item name="android:navigationBarColor">@color/splash_bg_end</item>
+    </style>
 </resources>

@@ -27,8 +27,8 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
 
-      - name: Build Debug APK
-        run: gradle assembleDebug
+      - name: Build APK & AAB Packages
+        run: gradle assembleDebug assembleRelease bundleDebug bundleRelease
 
       - name: Upload Debug APK Artifact
         uses: actions/upload-artifact@v4
@@ -37,14 +37,25 @@ jobs:
           path: app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: ignore
 
-      - name: Build Release APK
-        run: gradle assembleRelease
-
       - name: Upload Release APK Artifact
         uses: actions/upload-artifact@v4
         with:
           name: DailyInvoicer-Release-APK
           path: app/build/outputs/apk/release/app-release-unsigned.apk
+          if-no-files-found: ignore
+
+      - name: Upload Debug AAB Bundle Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: DailyInvoicer-Debug-AAB
+          path: app/build/outputs/bundle/debug/app-debug.aab
+          if-no-files-found: ignore
+
+      - name: Upload Release AAB Bundle Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: DailyInvoicer-Release-AAB
+          path: app/build/outputs/bundle/release/app-release-unsigned.aab
           if-no-files-found: ignore
 
       - name: Create GitHub Release on Tag
@@ -54,4 +65,6 @@ jobs:
           files: |
             app/build/outputs/apk/debug/app-debug.apk
             app/build/outputs/apk/release/app-release-unsigned.apk
+            app/build/outputs/bundle/debug/app-debug.aab
+            app/build/outputs/bundle/release/app-release-unsigned.aab
           generate_release_notes: true
