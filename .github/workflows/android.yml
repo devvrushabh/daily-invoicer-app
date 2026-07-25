@@ -27,8 +27,11 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
 
+      - name: Make gradlew executable
+        run: chmod +x gradlew
+
       - name: Build APK & AAB Packages
-        run: gradle assembleDebug assembleRelease bundleDebug bundleRelease
+        run: ./gradlew assembleDebug assembleRelease bundleDebug bundleRelease
 
       - name: Upload Debug APK Artifact
         uses: actions/upload-artifact@v4
