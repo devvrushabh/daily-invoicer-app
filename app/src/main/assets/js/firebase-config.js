@@ -7,9 +7,10 @@ const DEFAULT_FIREBASE_CONFIG = {
   apiKey: "AIzaSyCowLksp7HQb3VoTXQi3WkYyvSDVTWGBWI",
   authDomain: "daily-invoicer.firebaseapp.com",
   projectId: "daily-invoicer",
-  storageBucket: "daily-invoicer.appspot.com",
+  storageBucket: "daily-invoicer.firebasestorage.app",
   messagingSenderId: "622119709419",
-  appId: "1:622119709419:web:demo1234567890"
+  appId: "1:622119709419:web:9c4337a68428950fe4ecae",
+  measurementId: "G-Z0WN1576CM"
 };
 
 const FirebaseAuthManager = {
@@ -26,6 +27,14 @@ const FirebaseAuthManager = {
       if (window.firebase && !window.firebase.apps.length) {
         window.firebase.initializeApp(config);
         this.initialized = true;
+        
+        if (window.firebase.firestore) {
+          try {
+            window.firebase.firestore().enablePersistence({ synchronizeTabs: true });
+          } catch (pe) {
+            console.warn("Firestore offline persistence notice:", pe);
+          }
+        }
         console.log("Firebase initialized for daily-invoicer project.");
       } else if (window.firebase && window.firebase.apps.length) {
         this.initialized = true;
@@ -38,13 +47,7 @@ const FirebaseAuthManager = {
           if (user) {
             sessionStorage.setItem('daily_invoicer_authenticated', 'true');
             unlockAppScreen();
-            this.syncUserInvoices(user.uid, (cloudInvoices) => {
-              if (cloudInvoices && cloudInvoices.length > 0) {
-                window.invoicesList = cloudInvoices;
-                if (typeof renderSavedInvoicesList === 'function') renderSavedInvoicesList();
-                if (typeof updateHeaderStats === 'function') updateHeaderStats();
-              }
-            });
+            this.migrateAndSyncInvoices(user.uid);
           } else {
             const sessionActive = sessionStorage.getItem('daily_invoicer_authenticated');
             if (sessionActive === 'true') {
@@ -63,7 +66,7 @@ const FirebaseAuthManager = {
         }
       }
     } catch (err) {
-      console.warn("Firebase Init Fallback:", err);
+      console.warn("Firebase Init Error:", err);
       const sessionActive = sessionStorage.getItem('daily_invoicer_authenticated');
       if (sessionActive === 'true') unlockAppScreen(); else lockAppScreen();
     }
@@ -90,9 +93,11 @@ const FirebaseAuthManager = {
           await userCred.user.updateProfile({ displayName: displayName });
         }
         sessionStorage.setItem('daily_invoicer_authenticated', 'true');
+        this.currentUser = userCred.user;
+        this.migrateAndSyncInvoices(userCred.user.uid);
         return { success: true, user: userCred.user };
       } catch (err) {
-        console.warn("Firebase Sign-Up error, attempting local auth fallback:", err);
+        console.warn("Firebase Sign-Up error, falling back to local auth:", err);
       }
     }
     const user = this._localAuthFallback(cleanEmail, displayName || cleanEmail.split('@')[0]);
@@ -106,9 +111,11 @@ const FirebaseAuthManager = {
       try {
         const userCred = await window.firebase.auth().signInWithEmailAndPassword(cleanEmail, password);
         sessionStorage.setItem('daily_invoicer_authenticated', 'true');
+        this.currentUser = userCred.user;
+        this.migrateAndSyncInvoices(userCred.user.uid);
         return { success: true, user: userCred.user };
       } catch (err) {
-        console.warn("Firebase Sign-In error, attempting local auth fallback:", err);
+        console.warn("Firebase Sign-In error, falling back to local auth:", err);
       }
     }
     const user = this._localAuthFallback(cleanEmail, cleanEmail.split('@')[0]);
@@ -120,18 +127,26 @@ const FirebaseAuthManager = {
     if (this.initialized && window.firebase && window.firebase.auth && !this.isDemoMode) {
       try {
         const provider = new window.firebase.auth.GoogleAuthProvider();
-        const result = await window.firebase.auth().signInWithPopup(provider);
-        sessionStorage.setItem('daily_invoicer_authenticated', 'true');
-        return { success: true, user: result.user };
-      } catch (err) {
-        console.warn("Google Auth Popup error, attempting redirect/local fallback:", err);
+        provider.addScope('email');
+        provider.addScope('profile');
+        
+        let result;
         try {
-          const provider = new window.firebase.auth.GoogleAuthProvider();
+          result = await window.firebase.auth().signInWithPopup(provider);
+        } catch (popupErr) {
+          console.warn("Google Auth Popup error, attempting redirect:", popupErr);
           await window.firebase.auth().signInWithRedirect(provider);
           return { success: true };
-        } catch (rErr) {
-          console.warn("Google Auth Redirect error:", rErr);
         }
+
+        if (result && result.user) {
+          sessionStorage.setItem('daily_invoicer_authenticated', 'true');
+          this.currentUser = result.user;
+          this.migrateAndSyncInvoices(result.user.uid);
+          return { success: true, user: result.user };
+        }
+      } catch (err) {
+        console.warn("Google Auth Error, proceeding with cloud sync fallback:", err);
       }
     }
     const user = this._localAuthFallback("google.user@gmail.com", "Google User");
@@ -142,6 +157,10 @@ const FirebaseAuthManager = {
   signOut: async function() {
     localStorage.removeItem('apex_mock_user');
     sessionStorage.removeItem('daily_invoicer_authenticated');
+    if (this._unsubscribeFirestore) {
+      this._unsubscribeFirestore();
+      this._unsubscribeFirestore = null;
+    }
     this.currentUser = null;
     if (this.initialized && window.firebase.auth) {
       try {
@@ -194,6 +213,38 @@ const FirebaseAuthManager = {
     return true;
   },
 
+  migrateAndSyncInvoices: function(uid) {
+    if (!uid) return;
+
+    // Migrate existing local storage invoices into Firestore
+    try {
+      const localData = localStorage.getItem('daily_invoices_list');
+      if (localData) {
+        const localInvoices = JSON.parse(localData);
+        if (Array.isArray(localInvoices)) {
+          localInvoices.forEach(inv => {
+            if (inv && (inv.id || inv.number)) {
+              this.saveUserInvoice(uid, inv);
+            }
+          });
+        }
+      }
+    } catch (e) {
+      console.warn("Local invoice migration exception:", e);
+    }
+
+    // Real-time Firestore sync listener
+    this.syncUserInvoices(uid, (cloudInvoices) => {
+      if (cloudInvoices && cloudInvoices.length > 0) {
+        window.invoicesList = cloudInvoices;
+        localStorage.setItem('daily_invoices_list', JSON.stringify(cloudInvoices));
+        if (typeof renderSavedInvoicesList === 'function') renderSavedInvoicesList();
+        if (typeof updateHeaderStats === 'function') updateHeaderStats();
+        if (typeof updateLivePreviewSheet === 'function') updateLivePreviewSheet();
+      }
+    });
+  },
+
   syncUserInvoices: function(uid, onUpdate) {
     if (this.initialized && window.firebase.firestore && !this.isDemoMode && uid) {
       try {
@@ -214,6 +265,18 @@ const FirebaseAuthManager = {
         console.warn("Firestore sync error:", e);
       }
     }
+  }
+};
+
+window.saveInvoiceToCloud = function(invoice) {
+  if (FirebaseAuthManager.currentUser && FirebaseAuthManager.currentUser.uid) {
+    FirebaseAuthManager.saveUserInvoice(FirebaseAuthManager.currentUser.uid, invoice);
+  }
+};
+
+window.deleteInvoiceFromCloud = function(invoiceId) {
+  if (FirebaseAuthManager.currentUser && FirebaseAuthManager.currentUser.uid) {
+    FirebaseAuthManager.deleteUserInvoice(FirebaseAuthManager.currentUser.uid, invoiceId);
   }
 };
 

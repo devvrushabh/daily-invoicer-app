@@ -51,6 +51,14 @@ class MainActivity : AppCompatActivity() {
         settings.displayZoomControls = false
         settings.mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
 
+        // Enable popups & window management for Google Auth / Firebase Auth
+        settings.javaScriptCanOpenWindowsAutomatically = true
+        settings.setSupportMultipleWindows(true)
+
+        // Custom User-Agent to bypass Google OAuth disallowed_useragent restriction in Android WebView
+        val rawUserAgent = settings.userAgentString
+        settings.userAgentString = rawUserAgent.replace("; wv", "").replace("Version/4.0 ", "")
+
         // Interface for Native Android interaction
         webView.addJavascriptInterface(WebAppInterface(this), "AndroidNative")
 
@@ -72,6 +80,32 @@ class MainActivity : AppCompatActivity() {
         }
 
         webView.webChromeClient = object : WebChromeClient() {
+            override fun onCreateWindow(
+                view: WebView?,
+                isDialog: Boolean,
+                isUserGesture: Boolean,
+                resultMsg: android.os.Message?
+            ): Boolean {
+                val popupWebView = WebView(this@MainActivity)
+                popupWebView.settings.javaScriptEnabled = true
+                popupWebView.settings.domStorageEnabled = true
+                popupWebView.settings.userAgentString = webView.settings.userAgentString
+                popupWebView.webViewClient = object : WebViewClient() {
+                    override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest?): Boolean {
+                        val url = request?.url?.toString() ?: return false
+                        if (url.contains("accounts.google.com") || url.contains("firebaseapp.com")) {
+                            view?.loadUrl(url)
+                            return true
+                        }
+                        return false
+                    }
+                }
+                val transport = resultMsg?.obj as? WebView.WebViewTransport
+                transport?.webView = popupWebView
+                resultMsg?.sendToTarget()
+                return true
+            }
+
             override fun onShowFileChooser(
                 webView: WebView?,
                 filePathCallback: ValueCallback<Array<Uri>>?,
