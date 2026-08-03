@@ -67,7 +67,7 @@ const SupabaseAuthManager = {
     }
   },
 
-  // 1. Manual Email & Password Sign Up
+  // 1. Manual Email & Password Sign Up (Strict Supabase Auth)
   signUp: async function (email, password, fullName) {
     const cleanEmail = (email || '').trim().toLowerCase();
     if (!cleanEmail || !password || password.length < 6) {
@@ -75,56 +75,57 @@ const SupabaseAuthManager = {
       return { success: false };
     }
 
-    // Save signup credentials locally for seamless session recovery after logout
-    try {
-      const storedUsers = JSON.parse(localStorage.getItem('daily_sb_users') || '{}');
-      storedUsers[cleanEmail] = { password: password, name: fullName || cleanEmail.split('@')[0] };
-      localStorage.setItem('daily_sb_users', JSON.stringify(storedUsers));
-    } catch (e) { }
-
-    if (this.initialized && this.client) {
-      try {
-        const { data, error } = await this.client.auth.signUp({
-          email: cleanEmail,
-          password: password,
-          options: {
-            data: {
-              full_name: fullName || cleanEmail.split('@')[0]
-            }
-          }
-        });
-
-        if (error && error.message && error.message.toLowerCase().includes('already registered')) {
-          return this.signIn(cleanEmail, password);
-        }
-
-        // Auto-login newly registered user
-        const signInRes = await this.client.auth.signInWithPassword({
-          email: cleanEmail,
-          password: password
-        });
-
-        const activeUser = (signInRes.data && signInRes.data.user) || (data && data.user);
-        if (activeUser) {
-          sessionStorage.setItem('daily_invoicer_authenticated', 'true');
-          this.currentUser = activeUser;
-          updateAuthUIState(activeUser);
-          unlockAppScreen();
-          this.syncUserInvoices(activeUser.id);
-          return { success: true, user: activeUser };
-        }
-      } catch (err) {
-        console.warn("Supabase Sign-Up Exception:", err);
-      }
+    if (!this.initialized || !this.client) {
+      alert("Supabase Authentication is not connected. Please check your connection.");
+      return { success: false };
     }
 
-    const user = this._localAuthFallback(cleanEmail, fullName || cleanEmail.split('@')[0]);
-    sessionStorage.setItem('daily_invoicer_authenticated', 'true');
-    unlockAppScreen();
-    return { success: true, user: user };
+    try {
+      const { data, error } = await this.client.auth.signUp({
+        email: cleanEmail,
+        password: password,
+        options: {
+          data: {
+            full_name: fullName || cleanEmail.split('@')[0]
+          }
+        }
+      });
+
+      if (error) {
+        if (error.message && error.message.toLowerCase().includes('already registered')) {
+          return this.signIn(cleanEmail, password);
+        } else {
+          alert("Sign Up Error: " + (error.message || "Failed to create account."));
+          return { success: false, error: error.message };
+        }
+      }
+
+      // Auto-login newly registered user
+      const signInRes = await this.client.auth.signInWithPassword({
+        email: cleanEmail,
+        password: password
+      });
+
+      const activeUser = (signInRes.data && signInRes.data.user) || (data && data.user);
+      if (activeUser) {
+        sessionStorage.setItem('daily_invoicer_authenticated', 'true');
+        this.currentUser = activeUser;
+        updateAuthUIState(activeUser);
+        unlockAppScreen();
+        this.syncUserInvoices(activeUser.id);
+        return { success: true, user: activeUser };
+      }
+    } catch (err) {
+      console.error("Supabase Sign-Up Exception:", err);
+      alert("Sign Up Error: " + (err.message || "Unable to complete registration."));
+      return { success: false };
+    }
+
+    alert("Sign Up Failed. Please check your credentials.");
+    return { success: false };
   },
 
-  // 2. Manual Email & Password Sign In (Strict Credential Validation)
+  // 2. Manual Email & Password Sign In (Strict Supabase Auth)
   signIn: async function (email, password) {
     const cleanEmail = (email || '').trim().toLowerCase();
     if (!cleanEmail || !password) {
@@ -132,52 +133,33 @@ const SupabaseAuthManager = {
       return { success: false };
     }
 
-    if (this.initialized && this.client) {
-      try {
-        const { data, error } = await this.client.auth.signInWithPassword({
-          email: cleanEmail,
-          password: password
-        });
-
-        if (!error && data && data.user) {
-          sessionStorage.setItem('daily_invoicer_authenticated', 'true');
-          this.currentUser = data.user;
-          updateAuthUIState(data.user);
-          unlockAppScreen();
-          this.syncUserInvoices(data.user.id);
-          return { success: true, user: data.user };
-        }
-
-        // Verify against registered signup credentials
-        let knownAccount = null;
-        try {
-          const storedUsers = JSON.parse(localStorage.getItem('daily_sb_users') || '{}');
-          knownAccount = storedUsers[cleanEmail];
-        } catch (e) { }
-
-        if (knownAccount) {
-          if (knownAccount.password === password) {
-            const user = this._localAuthFallback(cleanEmail, knownAccount.name);
-            sessionStorage.setItem('daily_invoicer_authenticated', 'true');
-            unlockAppScreen();
-            return { success: true, user: user };
-          } else {
-            alert("Incorrect password. Please enter the password you used during Sign Up.");
-            return { success: false, error: "Incorrect password" };
-          }
-        }
-
-        if (error) {
-          alert("Invalid Email or Password. Please check your credentials and try again.");
-          return { success: false, error: error.message };
-        }
-      } catch (err) {
-        console.warn("Supabase Sign-In Exception:", err);
-      }
+    if (!this.initialized || !this.client) {
+      alert("Supabase Authentication is not connected. Please check your connection.");
+      return { success: false };
     }
 
-    alert("Authentication failed. Please check your email and password.");
-    return { success: false };
+    try {
+      const { data, error } = await this.client.auth.signInWithPassword({
+        email: cleanEmail,
+        password: password
+      });
+
+      if (error || !data || !data.user) {
+        alert("Invalid Email or Password. Please check your credentials and try again.");
+        return { success: false, error: error ? error.message : "Invalid credentials" };
+      }
+
+      sessionStorage.setItem('daily_invoicer_authenticated', 'true');
+      this.currentUser = data.user;
+      updateAuthUIState(data.user);
+      unlockAppScreen();
+      this.syncUserInvoices(data.user.id);
+      return { success: true, user: data.user };
+    } catch (err) {
+      console.error("Supabase Sign-In Exception:", err);
+      alert("Invalid Email or Password. Please check your credentials and try again.");
+      return { success: false };
+    }
   },
 
   // 3. Google OAuth Sign In / Sign Up
