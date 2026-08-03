@@ -91,23 +91,3 @@ function getBlankInvoice() {
     notes: 'Thank you for your business! Payment is due within 14 days of invoice date.'
   };
 }
-
-function mergeCloudInvoices(cloudInvoices) {
-  if (!Array.isArray(cloudInvoices) || cloudInvoices.length === 0) return;
-  if (typeof invoicesList === 'undefined') return;
-  const existingIds = new Set(invoicesList.map(i => i.id));
-  cloudInvoices.forEach(cloudInv => {
-    if (cloudInv && cloudInv.id) {
-      if (existingIds.has(cloudInv.id)) {
-        const idx = invoicesList.findIndex(i => i.id === cloudInv.id);
-        if (idx !== -1) invoicesList[idx] = cloudInv;
-      } else {
-        invoicesList.push(cloudInv);
-      }
-    }
-  });
-  if (typeof saveInvoicesToStorage === 'function') saveInvoicesToStorage();
-  if (typeof renderSavedInvoicesList === 'function') renderSavedInvoicesList();
-  if (typeof updateHeaderStats === 'function') updateHeaderStats();
-}
-window.mergeCloudInvoices = mergeCloudInvoices;
