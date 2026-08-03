@@ -757,27 +757,36 @@ input:focus, textarea:focus, select:focus {
   justify-content: space-between;
   width: 100%;
   gap: 4px;
-  margin-top: 2px;
+  margin-top: 4px;
 }
 
 .card-actions-mini .btn-xs {
   flex: 1;
   min-width: 0;
-  padding: 6px 3px;
-  font-size: 0.72rem;
+  padding: 4px 6px;
+  font-size: 0.68rem;
   font-weight: 600;
+  letter-spacing: 0.15px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 3px;
-  border-radius: var(--radius-sm);
+  border-radius: 16px;
   white-space: nowrap;
+  box-sizing: border-box;
 }
 
 .card-actions-mini .btn-xs svg {
-  width: 13px;
-  height: 13px;
+  width: 12px;
+  height: 12px;
   flex-shrink: 0;
+  stroke-width: 2.2;
+}
+
+.card-actions-mini .btn-xs span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* --------------------------------------------------------------------------
@@ -1482,13 +1491,14 @@ input:focus, textarea:focus, select:focus {
     font-size: 0.95rem;
   }
   .card-actions-mini .btn-xs {
-    padding: 5px 2px;
-    font-size: 0.7rem;
+    padding: 4px 3px;
+    font-size: 0.64rem;
     gap: 2px;
+    border-radius: 12px;
   }
   .card-actions-mini .btn-xs svg {
-    width: 12px;
-    height: 12px;
+    width: 11px;
+    height: 11px;
   }
   .stat-num {
     font-size: 0.82rem;
@@ -1500,8 +1510,9 @@ input:focus, textarea:focus, select:focus {
 
 @media (max-width: 360px) {
   .card-actions-mini .btn-xs {
-    padding: 4px 1px;
-    font-size: 0.65rem;
+    padding: 3px 1px;
+    font-size: 0.6rem;
+    border-radius: 10px;
   }
 }
 
