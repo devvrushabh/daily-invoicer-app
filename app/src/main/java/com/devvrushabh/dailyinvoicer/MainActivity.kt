@@ -1,18 +1,27 @@
 package com.devvrushabh.dailyinvoicer
 
 import android.annotation.SuppressLint
+import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
+import android.media.MediaScannerConnection
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
+import android.os.Environment
 import android.print.PrintAttributes
 import android.print.PrintDocumentAdapter
 import android.print.PrintManager
+import android.provider.MediaStore
+import android.util.Base64
 import android.webkit.*
 import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.FileProvider
+import java.io.File
+import java.io.FileOutputStream
 
 class MainActivity : AppCompatActivity() {
 
@@ -158,6 +167,123 @@ class MainActivity : AppCompatActivity() {
         fun showToast(message: String) {
             runOnUiThread {
                 Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+            }
+        }
+
+        @JavascriptInterface
+        fun savePdf(base64Data: String, fileName: String) {
+            runOnUiThread {
+                try {
+                    val cleanFileName = if (fileName.endsWith(".pdf", ignoreCase = true)) fileName else "$fileName.pdf"
+                    val pdfBytes = decodeBase64Pdf(base64Data)
+                    if (pdfBytes == null) {
+                        Toast.makeText(context, "Failed to decode PDF data", Toast.LENGTH_SHORT).show()
+                        return@runOnUiThread
+                    }
+
+                    var savedUri: Uri? = null
+
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                        val contentValues = ContentValues().apply {
+                            put(MediaStore.MediaColumns.DISPLAY_NAME, cleanFileName)
+                            put(MediaStore.MediaColumns.MIME_TYPE, "application/pdf")
+                            put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS)
+                            put(MediaStore.MediaColumns.IS_PENDING, 1)
+                        }
+
+                        val resolver = context.contentResolver
+                        val uri = resolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, contentValues)
+                        if (uri != null) {
+                            resolver.openOutputStream(uri)?.use { outputStream ->
+                                outputStream.write(pdfBytes)
+                            }
+                            contentValues.clear()
+                            contentValues.put(MediaStore.MediaColumns.IS_PENDING, 0)
+                            resolver.update(uri, contentValues, null, null)
+                            savedUri = uri
+                        }
+                    } else {
+                        val downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+                        if (!downloadsDir.exists()) {
+                            downloadsDir.mkdirs()
+                        }
+                        val pdfFile = File(downloadsDir, cleanFileName)
+                        FileOutputStream(pdfFile).use { outputStream ->
+                            outputStream.write(pdfBytes)
+                        }
+                        savedUri = Uri.fromFile(pdfFile)
+                        MediaScannerConnection.scanFile(
+                            context,
+                            arrayOf(pdfFile.absolutePath),
+                            arrayOf("application/pdf"),
+                            null
+                        )
+                    }
+
+                    if (savedUri != null) {
+                        Toast.makeText(context, "PDF saved to Downloads folder: $cleanFileName", Toast.LENGTH_LONG).show()
+                    } else {
+                        Toast.makeText(context, "Failed to save PDF to Downloads", Toast.LENGTH_SHORT).show()
+                    }
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                    Toast.makeText(context, "Error saving PDF: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
+                }
+            }
+        }
+
+        @JavascriptInterface
+        fun sharePdf(base64Data: String, fileName: String) {
+            runOnUiThread {
+                try {
+                    val cleanFileName = if (fileName.endsWith(".pdf", ignoreCase = true)) fileName else "$fileName.pdf"
+                    val pdfBytes = decodeBase64Pdf(base64Data)
+                    if (pdfBytes == null) {
+                        Toast.makeText(context, "Failed to decode PDF for sharing", Toast.LENGTH_SHORT).show()
+                        return@runOnUiThread
+                    }
+
+                    val cacheDir = File(context.cacheDir, "invoices")
+                    if (!cacheDir.exists()) {
+                        cacheDir.mkdirs()
+                    }
+                    val pdfFile = File(cacheDir, cleanFileName)
+                    FileOutputStream(pdfFile).use { outputStream ->
+                        outputStream.write(pdfBytes)
+                    }
+
+                    val contentUri = FileProvider.getUriForFile(
+                        context,
+                        "${context.packageName}.fileprovider",
+                        pdfFile
+                    )
+
+                    val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                        type = "application/pdf"
+                        putExtra(Intent.EXTRA_STREAM, contentUri)
+                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                    }
+
+                    val chooser = Intent.createChooser(shareIntent, "Share Invoice PDF")
+                    context.startActivity(chooser)
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                    Toast.makeText(context, "Error sharing PDF: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
+                }
+            }
+        }
+
+        private fun decodeBase64Pdf(base64Data: String): ByteArray? {
+            return try {
+                val cleanBase64 = if (base64Data.contains(",")) {
+                    base64Data.substringAfter(",")
+                } else {
+                    base64Data
+                }
+                Base64.decode(cleanBase64, Base64.DEFAULT)
+            } catch (e: Exception) {
+                e.printStackTrace()
+                null
             }
         }
     }

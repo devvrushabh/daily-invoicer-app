@@ -21,11 +21,22 @@ function downloadInvoicePDF() {
   };
 
   if (window.html2pdf) {
-    html2pdf().set(opt).from(paperElement).save().then(() => {
-      if (window.AndroidNative) {
-        window.AndroidNative.showToast("PDF Saved to Downloads!");
-      }
-    });
+    if (window.AndroidNative && typeof window.AndroidNative.savePdf === 'function') {
+      html2pdf().set(opt).from(paperElement).outputPdf('datauristring').then((pdfDataUri) => {
+        window.AndroidNative.savePdf(pdfDataUri, filename);
+      }).catch((err) => {
+        console.error("PDF generation error:", err);
+        if (window.AndroidNative) {
+          window.AndroidNative.showToast("Failed to generate PDF: " + (err.message || err));
+        }
+      });
+    } else {
+      html2pdf().set(opt).from(paperElement).save().then(() => {
+        if (window.AndroidNative) {
+          window.AndroidNative.showToast("PDF Saved to Downloads!");
+        }
+      });
+    }
   } else {
     window.print();
   }
@@ -51,11 +62,6 @@ function shareInvoicePDF() {
   const filename = `${(currentInv.number || 'Invoice').replace(/[^a-zA-Z0-9_-]/g, '_')}_${(currentInv.clientName || 'Client').replace(/[^a-zA-Z0-9_-]/g, '_')}.pdf`;
   const shareText = `Invoice #${currentInv.number || ''} for ${currentInv.clientName || 'Client'}\nTotal Amount: ${typeof formatCurrency === 'function' ? formatCurrency(totals.grandTotal, currentInv.currency) : totals.grandTotal}\nDue Date: ${currentInv.dueDate || 'N/A'}`;
 
-  if (window.AndroidNative && typeof window.AndroidNative.sharePdf === 'function') {
-    window.AndroidNative.sharePdf(filename);
-    return;
-  }
-
   const opt = {
     margin:       0.2,
     filename:     filename,
@@ -65,6 +71,19 @@ function shareInvoicePDF() {
   };
 
   if (window.html2pdf) {
+    if (window.AndroidNative && typeof window.AndroidNative.sharePdf === 'function') {
+      window.AndroidNative.showToast("Preparing document to share...");
+      html2pdf().set(opt).from(paperElement).outputPdf('datauristring').then((pdfDataUri) => {
+        window.AndroidNative.sharePdf(pdfDataUri, filename);
+      }).catch((err) => {
+        console.error("PDF generation for share failed:", err);
+        if (window.AndroidNative) {
+          window.AndroidNative.showToast("Failed to prepare PDF for sharing");
+        }
+      });
+      return;
+    }
+
     if (window.AndroidNative) window.AndroidNative.showToast("Preparing document to share...");
 
     html2pdf().set(opt).from(paperElement).outputPdf('blob').then((pdfBlob) => {
