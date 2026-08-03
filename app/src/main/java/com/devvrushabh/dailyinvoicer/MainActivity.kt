@@ -37,6 +37,8 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         
         webView = WebView(this)
+        webView.setLayerType(android.view.View.LAYER_TYPE_HARDWARE, null)
+        webView.setBackgroundColor(android.graphics.Color.TRANSPARENT)
         setContentView(webView)
 
         val settings: WebSettings = webView.settings
@@ -50,6 +52,7 @@ class MainActivity : AppCompatActivity() {
         settings.builtInZoomControls = true
         settings.displayZoomControls = false
         settings.mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
+        settings.cacheMode = WebSettings.LOAD_DEFAULT
 
         // Enable popups & window management for Google Auth / Firebase Auth
         settings.javaScriptCanOpenWindowsAutomatically = true

@@ -2,9 +2,9 @@
 <set xmlns:android="http://schemas.android.com/apk/res/android"
     android:fillAfter="true">
 
-    <!-- Phase 1: Scale up from nothing with elastic bounce -->
+    <!-- Phase 1: Rapid scale up with elastic overshoot -->
     <scale
-        android:duration="800"
+        android:duration="400"
         android:fromXScale="0.0"
         android:fromYScale="0.0"
         android:pivotX="50%"
@@ -13,20 +13,20 @@
         android:toYScale="1.0"
         android:interpolator="@android:anim/overshoot_interpolator" />
 
-    <!-- Phase 1: Fade in alongside scale -->
+    <!-- Phase 1: Fast fade in -->
     <alpha
-        android:duration="600"
+        android:duration="300"
         android:fromAlpha="0.0"
         android:toAlpha="1.0"
         android:interpolator="@android:anim/accelerate_decelerate_interpolator" />
 
-    <!-- Phase 2: Gentle rotation wiggle for personality -->
+    <!-- Phase 2: Micro rotation wiggle -->
     <rotate
-        android:duration="400"
-        android:fromDegrees="-8"
+        android:duration="250"
+        android:fromDegrees="-6"
         android:toDegrees="0"
         android:pivotX="50%"
         android:pivotY="50%"
-        android:startOffset="600"
-        android:interpolator="@android:anim/overshoot_interpolator" />
+        android:startOffset="250"
+        android:interpolator="@android:anim/decelerate_interpolator" />
 </set>

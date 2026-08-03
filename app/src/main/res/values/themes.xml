@@ -7,10 +7,20 @@
         <item name="android:statusBarColor">@color/primary_dark</item>
     </style>
 
+    <style name="SplashWindowAnimation" parent="@android:style/Animation.Activity">
+        <item name="android:activityOpenEnterAnimation">@anim/main_fade_enter</item>
+        <item name="android:activityOpenExitAnimation">@anim/splash_fade_exit</item>
+        <item name="android:activityCloseEnterAnimation">@anim/main_fade_enter</item>
+        <item name="android:activityCloseExitAnimation">@anim/splash_fade_exit</item>
+    </style>
+
     <style name="Theme.DailyInvoicer.Splash" parent="Theme.MaterialComponents.DayNight.NoActionBar">
         <item name="android:windowNoTitle">true</item>
         <item name="android:windowActionBar">false</item>
         <item name="android:windowFullscreen">true</item>
+        <item name="android:windowIsTranslucent">true</item>
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:windowAnimationStyle">@style/SplashWindowAnimation</item>
         <item name="android:statusBarColor">@color/splash_bg_start</item>
         <item name="android:navigationBarColor">@color/splash_bg_end</item>
     </style>

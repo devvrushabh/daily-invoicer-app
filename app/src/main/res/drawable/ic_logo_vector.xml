@@ -1,0 +1,38 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="200dp"
+    android:height="200dp"
+    android:viewportWidth="240"
+    android:viewportHeight="240">
+    <!-- Outer Rounded Square Background -->
+    <path
+        android:pathData="M40,20h160c11.05,0 20,8.95 20,20v160c0,11.05 -8.95,20 -20,20h-160c-11.05,0 -20,-8.95 -20,-20v-160c0,-11.05 8.95,-20 20,-20z"
+        android:fillColor="#0f172a"/>
+    <!-- Document Body -->
+    <path
+        android:pathData="M70,60h80c5.52,0 10,4.48 10,10v100c0,5.52 -4.48,10 -10,10h-80c-5.52,0 -10,-4.48 -10,-10v-100c0,-5.52 4.48,-10 10,-10z"
+        android:strokeWidth="4"
+        android:strokeColor="#FFFFFF"
+        android:fillColor="#00000000"/>
+    <!-- Folded Corner -->
+    <path
+        android:pathData="M150,60l10,10h-10v-10z"
+        android:fillColor="#FFFFFF"/>
+    <!-- Lines in Document -->
+    <path
+        android:pathData="M85,90h50M85,115h50M85,140h30"
+        android:strokeWidth="4"
+        android:strokeColor="#64748b"
+        android:strokeLineCap="round"/>
+    <!-- Currency Symbol (Gold Highlight) -->
+    <path
+        android:pathData="M165,130c-5.52,0 -10,4.48 -10,10v20c0,5.52 4.48,10 10,10s10,-4.48 10,-10v-20c0,-5.52 -4.48,-10 -10,-10zM165,125v5M165,170v5M160,140h10"
+        android:strokeWidth="5"
+        android:strokeColor="#fbbf24"
+        android:fillColor="#00000000"/>
+    <!-- Dollar sign detail -->
+    <path
+        android:pathData="M165,135v30M158,142c0,0 2,-2 7,-2s7,2 7,2M158,158c0,0 2,2 7,2s7,-2 7,-2"
+        android:strokeWidth="4"
+        android:strokeColor="#fbbf24"
+        android:strokeLineCap="round"/>
+</vector>

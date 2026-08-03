@@ -4,17 +4,17 @@
 
     <!-- Slide up from below -->
     <translate
-        android:duration="700"
-        android:fromYDelta="60"
+        android:duration="350"
+        android:fromYDelta="40"
         android:toYDelta="0"
-        android:startOffset="400"
+        android:startOffset="150"
         android:interpolator="@android:anim/decelerate_interpolator" />
 
     <!-- Fade in -->
     <alpha
-        android:duration="700"
+        android:duration="350"
         android:fromAlpha="0.0"
         android:toAlpha="1.0"
-        android:startOffset="400"
+        android:startOffset="150"
         android:interpolator="@android:anim/decelerate_interpolator" />
 </set>

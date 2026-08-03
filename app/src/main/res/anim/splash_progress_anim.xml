@@ -4,21 +4,21 @@
 
     <!-- Scale up from small -->
     <scale
-        android:duration="500"
+        android:duration="300"
         android:fromXScale="0.5"
         android:fromYScale="0.5"
         android:pivotX="50%"
         android:pivotY="50%"
         android:toXScale="1.0"
         android:toYScale="1.0"
-        android:startOffset="1000"
+        android:startOffset="350"
         android:interpolator="@android:anim/overshoot_interpolator" />
 
     <!-- Fade in -->
     <alpha
-        android:duration="500"
+        android:duration="300"
         android:fromAlpha="0.0"
         android:toAlpha="1.0"
-        android:startOffset="1000"
+        android:startOffset="350"
         android:interpolator="@android:anim/decelerate_interpolator" />
 </set>

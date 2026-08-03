@@ -9,8 +9,9 @@
     <color name="white">#FFFFFFFF</color>
     <color name="primary">#2563EB</color>
     <color name="primary_dark">#1D4ED8</color>
-    <color name="splash_bg_start">#0F172A</color>
-    <color name="splash_bg_end">#1E293B</color>
-    <color name="accent_gold">#F59E0B</color>
-    <color name="text_muted">#94A3B8</color>
+    <color name="splash_bg_start">#020617</color>
+    <color name="splash_bg_end">#0f172a</color>
+    <color name="accent_gold">#fbbf24</color>
+    <color name="text_muted">#64748b</color>
+    <color name="ic_launcher_background">#020617</color>
 </resources>
