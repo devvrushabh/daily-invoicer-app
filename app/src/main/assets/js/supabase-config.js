@@ -10,10 +10,26 @@ const SupabaseAuthManager = {
   client: null,
   currentUser: null,
 
+  _isOAuthCallback: false,
+
   init: function() {
     try {
+      // Detect if this page load is a Google OAuth callback (tokens in URL hash)
+      const hashParams = window.location.hash;
+      if (hashParams && (hashParams.includes('access_token') || hashParams.includes('refresh_token') || hashParams.includes('type=recovery'))) {
+        this._isOAuthCallback = true;
+        // Keep the welcome screen hidden while we process the callback
+        const overlay = document.getElementById('auth-welcome-screen');
+        if (overlay) overlay.style.display = 'none';
+      }
+
       if (window.supabase) {
-        this.client = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        this.client = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+          auth: {
+            detectSessionInUrl: true,
+            flowType: 'implicit'
+          }
+        });
         console.log("Supabase Client initialized successfully.");
 
         // Check current session
@@ -24,6 +40,13 @@ const SupabaseAuthManager = {
             updateAuthUIState(session.user);
             unlockAppScreen();
             this.syncInvoicesFromSupabase(session.user.id);
+            this._cleanUrlHash();
+          } else if (!this._isOAuthCallback) {
+            // Only show login screen if this is NOT an OAuth callback in progress
+            const sessionActive = sessionStorage.getItem('daily_invoicer_authenticated');
+            if (sessionActive !== 'true') {
+              lockAppScreen();
+            }
           }
         });
 
@@ -33,7 +56,15 @@ const SupabaseAuthManager = {
           this.currentUser = user;
           updateAuthUIState(user);
 
-          if (user) {
+          if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+            sessionStorage.setItem('daily_invoicer_authenticated', 'true');
+            unlockAppScreen();
+            if (user) this.syncInvoicesFromSupabase(user.id);
+            this._cleanUrlHash();
+          } else if (event === 'SIGNED_OUT') {
+            sessionStorage.removeItem('daily_invoicer_authenticated');
+            lockAppScreen();
+          } else if (user) {
             sessionStorage.setItem('daily_invoicer_authenticated', 'true');
             unlockAppScreen();
             this.syncInvoicesFromSupabase(user.id);
@@ -56,25 +87,65 @@ const SupabaseAuthManager = {
   signUp: async function(email, password, fullName) {
     const cleanEmail = (email || '').trim().toLowerCase();
     if (!cleanEmail) {
-      const defaultEmail = 'user@example.com';
-      const fallbackUser = this._localAuthFallback(defaultEmail, 'User');
-      sessionStorage.setItem('daily_invoicer_authenticated', 'true');
-      updateAuthUIState(fallbackUser);
-      unlockAppScreen();
-      return { success: true, user: fallbackUser };
+      return { success: false, error: 'Please enter an email address.' };
+    }
+    if (!password || password.length < 6) {
+      return { success: false, error: 'Password must be at least 6 characters.' };
     }
 
     if (this.client) {
       try {
         const { data, error } = await this.client.auth.signUp({
           email: cleanEmail,
-          password: password || '123456',
+          password: password,
           options: {
             data: {
               full_name: fullName || cleanEmail.split('@')[0]
             }
           }
         });
+        if (error) {
+          return { success: false, error: error.message };
+        }
+        if (data && data.user) {
+          // Check if email confirmation is required
+          if (data.user.identities && data.user.identities.length === 0) {
+            return { success: false, error: 'This email is already registered. Please sign in instead.' };
+          }
+          sessionStorage.setItem('daily_invoicer_authenticated', 'true');
+          this.currentUser = data.user;
+          updateAuthUIState(data.user);
+          unlockAppScreen();
+          return { success: true, user: data.user };
+        }
+        return { success: false, error: 'Sign up failed. Please try again.' };
+      } catch (err) {
+        console.warn("Supabase Sign Up Error:", err);
+        return { success: false, error: err.message || 'Sign up failed. Please try again.' };
+      }
+    }
+    return { success: false, error: 'Authentication service unavailable. Please try again later.' };
+  },
+
+  // 2. Manual Email / Password Sign In
+  signIn: async function(email, password) {
+    const cleanEmail = (email || '').trim().toLowerCase();
+    if (!cleanEmail) {
+      return { success: false, error: 'Please enter an email address.' };
+    }
+    if (!password) {
+      return { success: false, error: 'Please enter your password.' };
+    }
+
+    if (this.client) {
+      try {
+        const { data, error } = await this.client.auth.signInWithPassword({
+          email: cleanEmail,
+          password: password
+        });
+        if (error) {
+          return { success: false, error: error.message };
+        }
         if (data && data.user) {
           sessionStorage.setItem('daily_invoicer_authenticated', 'true');
           this.currentUser = data.user;
@@ -82,66 +153,37 @@ const SupabaseAuthManager = {
           unlockAppScreen();
           return { success: true, user: data.user };
         }
+        return { success: false, error: 'Sign in failed. Please check your credentials.' };
       } catch (err) {
-        console.warn("Supabase Sign Up Notice:", err);
+        console.warn("Supabase Sign In Error:", err);
+        return { success: false, error: err.message || 'Sign in failed. Please try again.' };
       }
     }
-    const fallbackUser = this._localAuthFallback(cleanEmail, fullName || cleanEmail.split('@')[0]);
-    sessionStorage.setItem('daily_invoicer_authenticated', 'true');
-    updateAuthUIState(fallbackUser);
-    unlockAppScreen();
-    return { success: true, user: fallbackUser };
-  },
-
-  // 2. Manual Email / Password Sign In
-  signIn: async function(email, password) {
-    const cleanEmail = (email || '').trim().toLowerCase();
-    if (!cleanEmail) {
-      const defaultEmail = 'devvrushabh@gmail.com';
-      const fallbackUser = this._localAuthFallback(defaultEmail, 'Vrushabh');
-      sessionStorage.setItem('daily_invoicer_authenticated', 'true');
-      updateAuthUIState(fallbackUser);
-      unlockAppScreen();
-      return { success: true, user: fallbackUser };
-    }
-
-    if (this.client) {
-      try {
-        const { data, error } = await this.client.auth.signInWithPassword({
-          email: cleanEmail,
-          password: password || '123456'
-        });
-        if (!error && data && data.user) {
-          sessionStorage.setItem('daily_invoicer_authenticated', 'true');
-          this.currentUser = data.user;
-          updateAuthUIState(data.user);
-          unlockAppScreen();
-          return { success: true, user: data.user };
-        }
-
-        // If credentials not registered yet, attempt auto signup
-        console.warn("Sign In notice, attempting auto registration:", error);
-        const signUpRes = await this.signUp(cleanEmail, password || '123456', cleanEmail.split('@')[0]);
-        if (signUpRes.success) return signUpRes;
-      } catch (err) {
-        console.warn("Supabase Sign In Notice:", err);
-      }
-    }
-    const fallbackUser = this._localAuthFallback(cleanEmail, cleanEmail.split('@')[0]);
-    sessionStorage.setItem('daily_invoicer_authenticated', 'true');
-    updateAuthUIState(fallbackUser);
-    unlockAppScreen();
-    return { success: true, user: fallbackUser };
+    return { success: false, error: 'Authentication service unavailable. Please try again later.' };
   },
 
   // 3. Google OAuth Sign In
+  // Clean up OAuth tokens from URL hash after successful auth
+  _cleanUrlHash: function() {
+    if (window.location.hash && window.location.hash.includes('access_token')) {
+      // Replace the hash without triggering a page reload
+      const cleanUrl = window.location.pathname + window.location.search;
+      window.history.replaceState(null, '', cleanUrl);
+    }
+  },
+
   signInWithGoogle: async function() {
     if (this.client) {
       try {
+        // Use only the origin to avoid redirect URL mismatches
+        const redirectUrl = window.location.origin + window.location.pathname;
         const { data, error } = await this.client.auth.signInWithOAuth({
           provider: 'google',
           options: {
-            redirectTo: window.location.origin + window.location.pathname
+            redirectTo: redirectUrl,
+            queryParams: {
+              prompt: 'select_account'
+            }
           }
         });
         if (error) throw error;
@@ -273,6 +315,29 @@ const SupabaseAuthManager = {
   }
 };
 
+// Show auth error message on the welcome screen
+function showAuthError(message) {
+  // Remove any existing error
+  const existing = document.querySelector('.auth-error-msg');
+  if (existing) existing.remove();
+
+  const errorDiv = document.createElement('div');
+  errorDiv.className = 'auth-error-msg';
+  errorDiv.style.cssText = 'background: rgba(239,68,68,0.15); color: #f87171; border: 1px solid rgba(239,68,68,0.3); border-radius: 8px; padding: 10px 14px; margin-top: 10px; font-size: 13px; text-align: center; animation: fadeIn 0.2s ease;';
+  errorDiv.textContent = message;
+
+  // Insert after the active form
+  const activeForm = document.getElementById('welcome-signin-form')?.style.display !== 'none'
+    ? document.getElementById('welcome-signin-form')
+    : document.getElementById('welcome-signup-form');
+  if (activeForm) {
+    activeForm.parentNode.insertBefore(errorDiv, activeForm.nextSibling);
+  }
+
+  // Auto-remove after 5 seconds
+  setTimeout(() => { if (errorDiv.parentNode) errorDiv.remove(); }, 5000);
+}
+
 // UI Handler Wrappers for Welcome Auth Screen
 function handleWelcomeSignIn(event) {
   if (event && event.preventDefault) event.preventDefault();
@@ -283,9 +348,11 @@ function handleWelcomeSignIn(event) {
   const password = passInput ? passInput.value : '';
 
   SupabaseAuthManager.signIn(email, password).then((res) => {
-    sessionStorage.setItem('daily_invoicer_authenticated', 'true');
-    unlockAppScreen();
-    if (window.AndroidNative) window.AndroidNative.showToast("Signed in successfully!");
+    if (res.success) {
+      if (window.AndroidNative) window.AndroidNative.showToast("Signed in successfully!");
+    } else {
+      showAuthError(res.error || 'Invalid email or password.');
+    }
   });
 }
 
@@ -300,17 +367,37 @@ function handleWelcomeSignUp(event) {
   const password = passInput ? passInput.value : '';
 
   SupabaseAuthManager.signUp(email, password, name).then((res) => {
-    sessionStorage.setItem('daily_invoicer_authenticated', 'true');
-    unlockAppScreen();
-    if (window.AndroidNative) window.AndroidNative.showToast("Account Created successfully!");
+    if (res.success) {
+      if (window.AndroidNative) window.AndroidNative.showToast("Account created successfully!");
+    } else {
+      showAuthError(res.error || 'Sign up failed. Please try again.');
+    }
   });
 }
 
 function handleGoogleSignIn() {
+  // Show loading state on the button — don't unlock the app yet
+  const googleBtn = document.querySelector('.btn-google-auth');
+  if (googleBtn) {
+    googleBtn.disabled = true;
+    googleBtn.innerHTML = '<span>Redirecting to Google...</span>';
+  }
+
   SupabaseAuthManager.signInWithGoogle().then((res) => {
-    if (res.success) {
-      sessionStorage.setItem('daily_invoicer_authenticated', 'true');
-      unlockAppScreen();
+    // Don't call unlockAppScreen() here — the browser is about to redirect
+    // to Google. The actual sign-in will be handled by onAuthStateChange
+    // when the user returns from Google's OAuth page.
+    if (!res.success) {
+      // Only restore button if OAuth failed (not redirecting)
+      if (googleBtn) {
+        googleBtn.disabled = false;
+        googleBtn.innerHTML = '<svg class="google-svg-icon" viewBox="0 0 48 48" width="20" height="20"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.28-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24s.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg><span>Sign in with Google</span>';
+      }
+    }
+  }).catch(() => {
+    if (googleBtn) {
+      googleBtn.disabled = false;
+      googleBtn.innerHTML = '<svg class="google-svg-icon" viewBox="0 0 48 48" width="20" height="20"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.28-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24s.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg><span>Sign in with Google</span>';
     }
   });
 }

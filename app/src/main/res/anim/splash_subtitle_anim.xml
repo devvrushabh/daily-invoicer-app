@@ -2,19 +2,19 @@
 <set xmlns:android="http://schemas.android.com/apk/res/android"
     android:fillAfter="true">
 
-    <!-- Slide up from below -->
+    <!-- Slide up from further below with longer delay -->
     <translate
         android:duration="700"
-        android:fromYDelta="60"
+        android:fromYDelta="50"
         android:toYDelta="0"
-        android:startOffset="400"
+        android:startOffset="700"
         android:interpolator="@android:anim/decelerate_interpolator" />
 
-    <!-- Fade in -->
+    <!-- Fade in with delay -->
     <alpha
         android:duration="700"
         android:fromAlpha="0.0"
         android:toAlpha="1.0"
-        android:startOffset="400"
+        android:startOffset="700"
         android:interpolator="@android:anim/decelerate_interpolator" />
 </set>

@@ -1,17 +1,32 @@
 <?xml version="1.0" encoding="utf-8"?>
 <set xmlns:android="http://schemas.android.com/apk/res/android"
     android:fillAfter="true">
+
+    <!-- Phase 1: Scale up from nothing with elastic bounce -->
     <scale
-        android:duration="1000"
-        android:fromXScale="0.4"
-        android:fromYScale="0.4"
+        android:duration="800"
+        android:fromXScale="0.0"
+        android:fromYScale="0.0"
         android:pivotX="50%"
         android:pivotY="50%"
         android:toXScale="1.0"
         android:toYScale="1.0"
         android:interpolator="@android:anim/overshoot_interpolator" />
+
+    <!-- Phase 1: Fade in alongside scale -->
     <alpha
-        android:duration="900"
+        android:duration="600"
         android:fromAlpha="0.0"
-        android:toAlpha="1.0" />
+        android:toAlpha="1.0"
+        android:interpolator="@android:anim/accelerate_decelerate_interpolator" />
+
+    <!-- Phase 2: Gentle rotation wiggle for personality -->
+    <rotate
+        android:duration="400"
+        android:fromDegrees="-8"
+        android:toDegrees="0"
+        android:pivotX="50%"
+        android:pivotY="50%"
+        android:startOffset="600"
+        android:interpolator="@android:anim/overshoot_interpolator" />
 </set>
