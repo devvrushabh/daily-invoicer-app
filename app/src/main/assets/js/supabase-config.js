@@ -67,7 +67,7 @@ const SupabaseAuthManager = {
     }
   },
 
-  // 1. Manual Email & Password Sign Up (No Email Confirmation Needed)
+  // 1. Manual Email & Password Sign Up (No Confirmation Needed)
   signUp: async function (email, password, fullName) {
     const cleanEmail = (email || '').trim().toLowerCase();
     if (!cleanEmail || !password) {
@@ -77,7 +77,7 @@ const SupabaseAuthManager = {
 
     if (this.initialized && this.client) {
       try {
-        const { data, error } = await this.client.auth.signUp({
+        const { data } = await this.client.auth.signUp({
           email: cleanEmail,
           password: password,
           options: {
@@ -102,10 +102,6 @@ const SupabaseAuthManager = {
           this.syncUserInvoices(activeUser.id);
           return { success: true, user: activeUser };
         }
-
-        if (error && !error.message.toLowerCase().includes('already registered')) {
-          console.warn("Supabase Auth Sign-Up notice:", error.message);
-        }
       } catch (err) {
         console.warn("Supabase Sign-Up Exception:", err);
       }
@@ -117,7 +113,7 @@ const SupabaseAuthManager = {
     return { success: true, user: user };
   },
 
-  // 2. Manual Email & Password Sign In
+  // 2. Manual Email & Password Sign In (Smart Auto-Registration Fallback)
   signIn: async function (email, password) {
     const cleanEmail = (email || '').trim().toLowerCase();
     if (!cleanEmail || !password) {
@@ -132,17 +128,36 @@ const SupabaseAuthManager = {
           password: password
         });
 
-        if (error) {
-          console.warn("Supabase Auth Sign-In notice:", error);
-          const errMsg = extractErrorMessage(error);
-          alert("Sign In Notice: " + errMsg);
-        } else if (data && data.user) {
+        if (!error && data && data.user) {
           sessionStorage.setItem('daily_invoicer_authenticated', 'true');
           this.currentUser = data.user;
           updateAuthUIState(data.user);
           unlockAppScreen();
           this.syncUserInvoices(data.user.id);
           return { success: true, user: data.user };
+        }
+
+        console.warn("Supabase Auth Sign-In notice:", error ? error.message : "Not found");
+
+        // Try automatic account creation if account doesn't exist yet
+        const signUpRes = await this.client.auth.signUp({
+          email: cleanEmail,
+          password: password,
+          options: {
+            data: {
+              full_name: cleanEmail.split('@')[0]
+            }
+          }
+        });
+
+        const activeUser = (signUpRes.data && signUpRes.data.user);
+        if (activeUser) {
+          sessionStorage.setItem('daily_invoicer_authenticated', 'true');
+          this.currentUser = activeUser;
+          updateAuthUIState(activeUser);
+          unlockAppScreen();
+          this.syncUserInvoices(activeUser.id);
+          return { success: true, user: activeUser };
         }
       } catch (err) {
         console.warn("Supabase Sign-In Exception:", err);
