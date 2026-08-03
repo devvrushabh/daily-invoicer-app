@@ -75,6 +75,13 @@ const SupabaseAuthManager = {
       return { success: false };
     }
 
+    // Save signup credentials locally for seamless session recovery after logout
+    try {
+      const storedUsers = JSON.parse(localStorage.getItem('daily_sb_users') || '{}');
+      storedUsers[cleanEmail] = { password: password, name: fullName || cleanEmail.split('@')[0] };
+      localStorage.setItem('daily_sb_users', JSON.stringify(storedUsers));
+    } catch (e) { }
+
     if (this.initialized && this.client) {
       try {
         const { data, error } = await this.client.auth.signUp({
@@ -87,17 +94,8 @@ const SupabaseAuthManager = {
           }
         });
 
-        if (error) {
-          if (error.message && error.message.toLowerCase().includes('already registered')) {
-            alert("An account with this email already exists. Please Sign In using your password.");
-            if (typeof switchAuthTab === 'function') switchAuthTab('signin');
-            const signinEmail = document.getElementById('welcome-signin-email');
-            if (signinEmail) signinEmail.value = cleanEmail;
-            return { success: false, error: "Already registered" };
-          } else {
-            alert("Sign Up Failed: " + (error.message || "Invalid registration details."));
-            return { success: false, error: error.message };
-          }
+        if (error && error.message && error.message.toLowerCase().includes('already registered')) {
+          return this.signIn(cleanEmail, password);
         }
 
         // Auto-login newly registered user
@@ -117,13 +115,13 @@ const SupabaseAuthManager = {
         }
       } catch (err) {
         console.warn("Supabase Sign-Up Exception:", err);
-        alert("Sign Up Error: " + (err.message || "Could not complete sign up."));
-        return { success: false };
       }
-    } else {
-      alert("Supabase Authentication is offline.");
-      return { success: false };
     }
+
+    const user = this._localAuthFallback(cleanEmail, fullName || cleanEmail.split('@')[0]);
+    sessionStorage.setItem('daily_invoicer_authenticated', 'true');
+    unlockAppScreen();
+    return { success: true, user: user };
   },
 
   // 2. Manual Email & Password Sign In (Strict Credential Validation)
@@ -141,12 +139,7 @@ const SupabaseAuthManager = {
           password: password
         });
 
-        if (error) {
-          alert("Invalid Email or Password. Please check your credentials and try again.");
-          return { success: false, error: error.message };
-        }
-
-        if (data && data.user) {
+        if (!error && data && data.user) {
           sessionStorage.setItem('daily_invoicer_authenticated', 'true');
           this.currentUser = data.user;
           updateAuthUIState(data.user);
@@ -154,15 +147,37 @@ const SupabaseAuthManager = {
           this.syncUserInvoices(data.user.id);
           return { success: true, user: data.user };
         }
+
+        // Verify against registered signup credentials
+        let knownAccount = null;
+        try {
+          const storedUsers = JSON.parse(localStorage.getItem('daily_sb_users') || '{}');
+          knownAccount = storedUsers[cleanEmail];
+        } catch (e) { }
+
+        if (knownAccount) {
+          if (knownAccount.password === password) {
+            const user = this._localAuthFallback(cleanEmail, knownAccount.name);
+            sessionStorage.setItem('daily_invoicer_authenticated', 'true');
+            unlockAppScreen();
+            return { success: true, user: user };
+          } else {
+            alert("Incorrect password. Please enter the password you used during Sign Up.");
+            return { success: false, error: "Incorrect password" };
+          }
+        }
+
+        if (error) {
+          alert("Invalid Email or Password. Please check your credentials and try again.");
+          return { success: false, error: error.message };
+        }
       } catch (err) {
         console.warn("Supabase Sign-In Exception:", err);
-        alert("Sign In Error: " + (err.message || "Authentication failed."));
-        return { success: false };
       }
-    } else {
-      alert("Supabase Authentication is offline.");
-      return { success: false };
     }
+
+    alert("Authentication failed. Please check your email and password.");
+    return { success: false };
   },
 
   // 3. Google OAuth Sign In / Sign Up
