@@ -725,13 +725,14 @@ input:focus, textarea:focus, select:focus {
 
 .inv-card-bottom {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
+  flex-direction: column;
+  align-items: stretch;
   border-top: 1px dashed var(--border-color);
   padding-top: 8px;
   font-size: 0.75rem;
   color: var(--text-muted);
-  gap: 8px;
+  gap: 6px;
+  width: 100%;
 }
 
 .due-tag {
@@ -753,13 +754,30 @@ input:focus, textarea:focus, select:focus {
 .card-actions-mini {
   display: flex;
   align-items: center;
+  justify-content: space-between;
+  width: 100%;
   gap: 4px;
-  margin-left: auto;
+  margin-top: 2px;
 }
 
 .card-actions-mini .btn-xs {
-  padding: 5px 10px;
-  font-size: 0.75rem;
+  flex: 1;
+  min-width: 0;
+  padding: 6px 3px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  border-radius: var(--radius-sm);
+  white-space: nowrap;
+}
+
+.card-actions-mini .btn-xs svg {
+  width: 13px;
+  height: 13px;
+  flex-shrink: 0;
 }
 
 /* --------------------------------------------------------------------------
@@ -1462,6 +1480,28 @@ input:focus, textarea:focus, select:focus {
   }
   .brand-title {
     font-size: 0.95rem;
+  }
+  .card-actions-mini .btn-xs {
+    padding: 5px 2px;
+    font-size: 0.7rem;
+    gap: 2px;
+  }
+  .card-actions-mini .btn-xs svg {
+    width: 12px;
+    height: 12px;
+  }
+  .stat-num {
+    font-size: 0.82rem;
+  }
+  .stat-lbl {
+    font-size: 0.58rem;
+  }
+}
+
+@media (max-width: 360px) {
+  .card-actions-mini .btn-xs {
+    padding: 4px 1px;
+    font-size: 0.65rem;
   }
 }
 

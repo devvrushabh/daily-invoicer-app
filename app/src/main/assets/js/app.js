@@ -413,11 +413,11 @@ function renderSavedInvoicesList() {
       <div class="inv-card-bottom">
         <span class="due-tag"><i data-lucide="calendar"></i> Due: ${inv.dueDate || 'N/A'}</span>
         <div class="card-actions-mini">
-          <button class="btn-xs primary" onclick="editInvoice('${inv.id}')" title="Edit Invoice"><i data-lucide="edit-2"></i> Edit</button>
-          <button class="btn-xs secondary" onclick="downloadInvoicePDFById('${inv.id}')" title="Download PDF"><i data-lucide="download"></i> PDF</button>
-          <button class="btn-xs secondary" onclick="shareInvoicePDFById('${inv.id}')" title="Share Invoice on WhatsApp / Apps"><i data-lucide="share-2"></i> Share</button>
-          <button class="btn-xs secondary" onclick="duplicateInvoice('${inv.id}')" title="Copy Invoice"><i data-lucide="copy"></i> Copy</button>
-          <button class="btn-xs danger" onclick="deleteInvoice('${inv.id}')" title="Delete Invoice"><i data-lucide="trash-2"></i> Delete</button>
+          <button class="btn-xs primary" onclick="editInvoice('${inv.id}')" title="Edit Invoice"><i data-lucide="edit-2"></i> <span>Edit</span></button>
+          <button class="btn-xs secondary" onclick="downloadInvoicePDFById('${inv.id}')" title="Download PDF"><i data-lucide="download"></i> <span>PDF</span></button>
+          <button class="btn-xs secondary" onclick="shareInvoicePDFById('${inv.id}')" title="Share Invoice on WhatsApp / Apps"><i data-lucide="share-2"></i> <span>Share</span></button>
+          <button class="btn-xs secondary" onclick="duplicateInvoice('${inv.id}')" title="Copy Invoice"><i data-lucide="copy"></i> <span>Copy</span></button>
+          <button class="btn-xs danger" onclick="deleteInvoice('${inv.id}')" title="Delete Invoice"><i data-lucide="trash-2"></i> <span>Delete</span></button>
         </div>
       </div>
     `;
