@@ -67,17 +67,17 @@ const SupabaseAuthManager = {
     }
   },
 
-  // 1. Manual Email & Password Sign Up (No Confirmation Needed)
+  // 1. Manual Email & Password Sign Up
   signUp: async function (email, password, fullName) {
     const cleanEmail = (email || '').trim().toLowerCase();
-    if (!cleanEmail || !password) {
-      alert("Please enter a valid email and password.");
+    if (!cleanEmail || !password || password.length < 6) {
+      alert("Please enter a valid email and a password of at least 6 characters.");
       return { success: false };
     }
 
     if (this.initialized && this.client) {
       try {
-        const { data } = await this.client.auth.signUp({
+        const { data, error } = await this.client.auth.signUp({
           email: cleanEmail,
           password: password,
           options: {
@@ -87,7 +87,20 @@ const SupabaseAuthManager = {
           }
         });
 
-        // Instant login without email confirmation check
+        if (error) {
+          if (error.message && error.message.toLowerCase().includes('already registered')) {
+            alert("An account with this email already exists. Please Sign In using your password.");
+            if (typeof switchAuthTab === 'function') switchAuthTab('signin');
+            const signinEmail = document.getElementById('welcome-signin-email');
+            if (signinEmail) signinEmail.value = cleanEmail;
+            return { success: false, error: "Already registered" };
+          } else {
+            alert("Sign Up Failed: " + (error.message || "Invalid registration details."));
+            return { success: false, error: error.message };
+          }
+        }
+
+        // Auto-login newly registered user
         const signInRes = await this.client.auth.signInWithPassword({
           email: cleanEmail,
           password: password
@@ -104,20 +117,20 @@ const SupabaseAuthManager = {
         }
       } catch (err) {
         console.warn("Supabase Sign-Up Exception:", err);
+        alert("Sign Up Error: " + (err.message || "Could not complete sign up."));
+        return { success: false };
       }
+    } else {
+      alert("Supabase Authentication is offline.");
+      return { success: false };
     }
-
-    const user = this._localAuthFallback(cleanEmail, fullName || cleanEmail.split('@')[0]);
-    sessionStorage.setItem('daily_invoicer_authenticated', 'true');
-    unlockAppScreen();
-    return { success: true, user: user };
   },
 
-  // 2. Manual Email & Password Sign In (Smart Auto-Registration Fallback)
+  // 2. Manual Email & Password Sign In (Strict Credential Validation)
   signIn: async function (email, password) {
     const cleanEmail = (email || '').trim().toLowerCase();
     if (!cleanEmail || !password) {
-      alert("Please enter a valid email and password.");
+      alert("Please enter both email and password.");
       return { success: false };
     }
 
@@ -128,7 +141,12 @@ const SupabaseAuthManager = {
           password: password
         });
 
-        if (!error && data && data.user) {
+        if (error) {
+          alert("Invalid Email or Password. Please check your credentials and try again.");
+          return { success: false, error: error.message };
+        }
+
+        if (data && data.user) {
           sessionStorage.setItem('daily_invoicer_authenticated', 'true');
           this.currentUser = data.user;
           updateAuthUIState(data.user);
@@ -136,38 +154,15 @@ const SupabaseAuthManager = {
           this.syncUserInvoices(data.user.id);
           return { success: true, user: data.user };
         }
-
-        console.warn("Supabase Auth Sign-In notice:", error ? error.message : "Not found");
-
-        // Try automatic account creation if account doesn't exist yet
-        const signUpRes = await this.client.auth.signUp({
-          email: cleanEmail,
-          password: password,
-          options: {
-            data: {
-              full_name: cleanEmail.split('@')[0]
-            }
-          }
-        });
-
-        const activeUser = (signUpRes.data && signUpRes.data.user);
-        if (activeUser) {
-          sessionStorage.setItem('daily_invoicer_authenticated', 'true');
-          this.currentUser = activeUser;
-          updateAuthUIState(activeUser);
-          unlockAppScreen();
-          this.syncUserInvoices(activeUser.id);
-          return { success: true, user: activeUser };
-        }
       } catch (err) {
         console.warn("Supabase Sign-In Exception:", err);
+        alert("Sign In Error: " + (err.message || "Authentication failed."));
+        return { success: false };
       }
+    } else {
+      alert("Supabase Authentication is offline.");
+      return { success: false };
     }
-
-    const user = this._localAuthFallback(cleanEmail, cleanEmail.split('@')[0]);
-    sessionStorage.setItem('daily_invoicer_authenticated', 'true');
-    unlockAppScreen();
-    return { success: true, user: user };
   },
 
   // 3. Google OAuth Sign In / Sign Up
