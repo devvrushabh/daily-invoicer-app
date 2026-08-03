@@ -248,6 +248,57 @@ const SupabaseAuthManager = {
   }
 };
 
+// UI Helpers & Tab Switcher
+function unlockAppScreen() {
+  const welcomeScreen = document.getElementById('auth-welcome-screen');
+  const appWrapper = document.getElementById('app');
+  if (welcomeScreen) welcomeScreen.style.setProperty('display', 'none', 'important');
+  if (appWrapper) appWrapper.style.setProperty('display', 'flex', 'important');
+  if (window.lucide && typeof window.lucide.createIcons === 'function') {
+    window.lucide.createIcons();
+  }
+}
+window.unlockAppScreen = unlockAppScreen;
+
+function lockAppScreen() {
+  const welcomeScreen = document.getElementById('auth-welcome-screen');
+  const appWrapper = document.getElementById('app');
+  if (welcomeScreen) welcomeScreen.style.setProperty('display', 'flex', 'important');
+  if (appWrapper) appWrapper.style.setProperty('display', 'none', 'important');
+  if (window.lucide && typeof window.lucide.createIcons === 'function') {
+    window.lucide.createIcons();
+  }
+}
+window.lockAppScreen = lockAppScreen;
+
+function switchAuthTab(tab) {
+  const btnSignIn = document.getElementById('tab-btn-signin');
+  const btnSignUp = document.getElementById('tab-btn-signup');
+  const formSignIn = document.getElementById('welcome-signin-form');
+  const formSignUp = document.getElementById('welcome-signup-form');
+
+  if (tab === 'signup') {
+    if (btnSignIn) btnSignIn.classList.remove('active');
+    if (btnSignUp) btnSignUp.classList.add('active');
+    if (formSignIn) formSignIn.style.display = 'none';
+    if (formSignUp) formSignUp.style.display = 'block';
+  } else {
+    if (btnSignUp) btnSignUp.classList.remove('active');
+    if (btnSignIn) btnSignIn.classList.add('active');
+    if (formSignUp) formSignUp.style.display = 'none';
+    if (formSignIn) formSignIn.style.display = 'block';
+  }
+}
+window.switchAuthTab = switchAuthTab;
+
+window.saveInvoiceToCloud = function(invoice) {
+  return SupabaseAuthManager.saveInvoiceToCloud(invoice);
+};
+
+window.deleteInvoiceFromCloud = function(invoiceId) {
+  return SupabaseAuthManager.deleteInvoiceFromCloud(invoiceId);
+};
+
 // Global Handlers
 function handleGoogleSignIn() {
   SupabaseAuthManager.signInWithGoogle().then(() => {
