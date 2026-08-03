@@ -4,7 +4,10 @@
         <item name="colorPrimary">@color/primary</item>
         <item name="colorPrimaryVariant">@color/primary_dark</item>
         <item name="colorOnPrimary">@color/white</item>
-        <item name="android:statusBarColor">@color/primary_dark</item>
+        <item name="android:windowBackground">@color/splash_bg_start</item>
+        <item name="android:colorBackground">@color/splash_bg_start</item>
+        <item name="android:statusBarColor">@color/splash_bg_start</item>
+        <item name="android:navigationBarColor">@color/splash_bg_start</item>
     </style>
 
     <style name="SplashWindowAnimation" parent="@android:style/Animation.Activity">
@@ -19,7 +22,8 @@
         <item name="android:windowActionBar">false</item>
         <item name="android:windowFullscreen">true</item>
         <item name="android:windowIsTranslucent">true</item>
-        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:windowBackground">@color/splash_bg_start</item>
+        <item name="android:colorBackground">@color/splash_bg_start</item>
         <item name="android:windowAnimationStyle">@style/SplashWindowAnimation</item>
         <item name="android:statusBarColor">@color/splash_bg_start</item>
         <item name="android:navigationBarColor">@color/splash_bg_end</item>

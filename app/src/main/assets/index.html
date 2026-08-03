@@ -1,27 +1,33 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark" class="dark-theme">
+<html lang="en" data-theme="dark" class="dark-theme" style="background-color: #090d16;">
 
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Daily Invoicer Mobile</title>
 
-  <!-- Google Fonts -->
+  <!-- CDN Domain Preconnecting -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="preconnect" href="https://cdn.jsdelivr.net">
+  <link rel="preconnect" href="https://cdnjs.cloudflare.com">
+  <link rel="preconnect" href="https://unpkg.com">
 
-  <!-- Lucide Icons -->
-  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Asynchronous Non-Blocking Google Fonts -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;500;600;700;800;900&display=swap" media="print" onload="this.media='all'">
+  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;500;600;700;800;900&display=swap"></noscript>
 
-  <!-- html2pdf.js for Client-Side PDF Generation -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <!-- Lucide Icons (Deferred) -->
+  <script src="https://unpkg.com/lucide@latest" defer></script>
 
-  <!-- QRCode.js for Dynamic UPI QR Codes -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <!-- html2pdf.js for Client-Side PDF Generation (Deferred) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js" defer></script>
 
-  <!-- Supabase v2 JS SDK -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <!-- QRCode.js for Dynamic UPI QR Codes (Deferred) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" defer></script>
+
+  <!-- Supabase v2 JS SDK (Deferred) -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
 
   <!-- Mobile App Stylesheet -->
   <link rel="stylesheet" href="css/mobile.css">
@@ -39,7 +45,24 @@
   </script>
 </head>
 
-<body>
+<body style="background-color: #090d16;">
+  <!-- DARK PRE-LOGIN ANIMATED LOADING SCREEN -->
+  <div id="prelogin-loader" class="prelogin-loader-overlay">
+    <div class="prelogin-loader-content">
+      <div class="prelogin-icon-wrapper">
+        <div class="prelogin-glow-ring"></div>
+        <div class="prelogin-app-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-receipt"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z"/><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/><path d="M12 17.5v-11"/></svg>
+        </div>
+      </div>
+      <h1 class="prelogin-title">DailyInvoicer</h1>
+      <p class="prelogin-subtitle">Loading your secure workspace...</p>
+      <div class="prelogin-spinner-bar">
+        <div class="prelogin-spinner-progress"></div>
+      </div>
+    </div>
+  </div>
+
   <!-- AUTHENTICATION WELCOME SCREEN (GATEKEEPER BEFORE ENTERING APP) -->
   <div id="auth-welcome-screen" class="auth-screen-overlay" style="display: flex;">
     <div class="auth-welcome-card">
@@ -945,13 +968,13 @@ Thank you!</textarea>
 
   </div>
 
-  <!-- App JavaScript Modules -->
-  <script src="js/invoice-data.js"></script>
-  <script src="js/supabase-config.js"></script>
-  <script src="js/payment-gateways.js"></script>
-  <script src="js/email-service.js"></script>
-  <script src="js/pdf-exporter.js"></script>
-  <script src="js/app.js"></script>
+  <!-- App JavaScript Modules (Deferred for fast parallel loading) -->
+  <script src="js/invoice-data.js" defer></script>
+  <script src="js/supabase-config.js" defer></script>
+  <script src="js/payment-gateways.js" defer></script>
+  <script src="js/email-service.js" defer></script>
+  <script src="js/pdf-exporter.js" defer></script>
+  <script src="js/app.js" defer></script>
 </body>
 
 </html>

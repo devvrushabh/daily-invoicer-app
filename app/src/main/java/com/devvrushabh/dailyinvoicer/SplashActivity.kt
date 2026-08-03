@@ -15,7 +15,7 @@ import androidx.appcompat.app.AppCompatActivity
 @SuppressLint("CustomSplashScreen")
 class SplashActivity : AppCompatActivity() {
 
-    private val splashTimeout: Long = 800 // Optimized fast load timing (800ms)
+    private val splashTimeout: Long = 400 // Ultra-fast load timing (400ms)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

@@ -36,14 +36,28 @@
         android:orientation="vertical"
         android:padding="32dp">
 
-        <!-- App Logo -->
-        <ImageView
-            android:id="@+id/img_splash_logo"
-            android:layout_width="240dp"
-            android:layout_height="240dp"
-            android:contentDescription="@string/app_name"
-            android:src="@drawable/ic_logo_vector"
-            android:alpha="0" />
+        <!-- Big App Logo with Glow -->
+        <FrameLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center">
+
+            <View
+                android:layout_width="220dp"
+                android:layout_height="220dp"
+                android:layout_gravity="center"
+                android:background="@drawable/splash_glow_circle"
+                android:alpha="0.25" />
+
+            <ImageView
+                android:id="@+id/img_splash_logo"
+                android:layout_width="190dp"
+                android:layout_height="190dp"
+                android:layout_gravity="center"
+                android:contentDescription="@string/app_name"
+                android:src="@drawable/ic_logo_vector"
+                android:alpha="0" />
+        </FrameLayout>
 
         <!-- App Title -->
         <TextView

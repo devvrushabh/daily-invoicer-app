@@ -12,8 +12,23 @@ const SupabaseAuthManager = {
 
   _isOAuthCallback: false,
 
+  hidePreloader: function() {
+    setTimeout(function() {
+      const loader = document.getElementById('prelogin-loader');
+      if (loader) {
+        loader.classList.add('fade-out');
+        setTimeout(function() {
+          loader.style.display = 'none';
+        }, 300);
+      }
+    }, 150);
+  },
+
   init: function() {
     try {
+      // Safety fallback to hide preloader after 3 seconds max
+      setTimeout(() => this.hidePreloader(), 3000);
+
       // Detect if this page load is a Google OAuth callback (tokens in URL hash)
       const hashParams = window.location.hash;
       if (hashParams && (hashParams.includes('access_token') || hashParams.includes('refresh_token') || hashParams.includes('type=recovery'))) {
@@ -48,6 +63,9 @@ const SupabaseAuthManager = {
               lockAppScreen();
             }
           }
+          this.hidePreloader();
+        }).catch(() => {
+          this.hidePreloader();
         });
 
         // Listen for auth state changes (Sign In, Sign Out, Token Refresh)
@@ -76,10 +94,14 @@ const SupabaseAuthManager = {
               lockAppScreen();
             }
           }
+          this.hidePreloader();
         });
+      } else {
+        this.hidePreloader();
       }
     } catch (err) {
       console.warn("Supabase Init Warning:", err);
+      this.hidePreloader();
     }
   },
 
