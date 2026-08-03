@@ -325,6 +325,56 @@ function updateAuthUIState(user) {
   if (window.lucide && typeof window.lucide.createIcons === 'function') window.lucide.createIcons();
 }
 
+function unlockAppScreen() {
+  const overlay = document.getElementById('auth-welcome-screen');
+  const app = document.getElementById('app');
+  if (overlay) overlay.style.display = 'none';
+  if (app) app.style.display = 'flex';
+  if (window.lucide && typeof window.lucide.createIcons === 'function') {
+    window.lucide.createIcons();
+  }
+}
+
+function lockAppScreen() {
+  const overlay = document.getElementById('auth-welcome-screen');
+  const app = document.getElementById('app');
+  if (overlay) overlay.style.display = 'flex';
+  if (app) app.style.display = 'none';
+  if (window.lucide && typeof window.lucide.createIcons === 'function') {
+    window.lucide.createIcons();
+  }
+}
+
+function switchAuthTab(tab) {
+  const btnSignIn = document.getElementById('tab-btn-signin');
+  const btnSignUp = document.getElementById('tab-btn-signup');
+  const formSignIn = document.getElementById('welcome-signin-form');
+  const formSignUp = document.getElementById('welcome-signup-form');
+
+  if (tab === 'signup') {
+    if (btnSignIn) btnSignIn.classList.remove('active');
+    if (btnSignUp) btnSignUp.classList.add('active');
+    if (formSignIn) formSignIn.style.display = 'none';
+    if (formSignUp) formSignUp.style.display = 'block';
+  } else {
+    if (btnSignUp) btnSignUp.classList.remove('active');
+    if (btnSignIn) btnSignIn.classList.add('active');
+    if (formSignUp) formSignUp.style.display = 'none';
+    if (formSignIn) formSignIn.style.display = 'block';
+  }
+}
+
+function autofillDemoCredentials() {
+  const emailInput = document.getElementById('welcome-signin-email');
+  const passInput = document.getElementById('welcome-signin-password');
+  if (emailInput) emailInput.value = 'devvrushabh@gmail.com';
+  if (passInput) passInput.value = 'Demo123456';
+}
+
+window.unlockAppScreen = unlockAppScreen;
+window.lockAppScreen = lockAppScreen;
+window.switchAuthTab = switchAuthTab;
+window.autofillDemoCredentials = autofillDemoCredentials;
 window.handleWelcomeSignIn = handleWelcomeSignIn;
 window.handleWelcomeSignUp = handleWelcomeSignUp;
 window.handleGoogleSignIn = handleGoogleSignIn;
