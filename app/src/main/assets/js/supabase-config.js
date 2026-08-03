@@ -67,7 +67,7 @@ const SupabaseAuthManager = {
     }
   },
 
-  // 1. Manual Email & Password Sign Up
+  // 1. Manual Email & Password Sign Up (No Email Confirmation Needed)
   signUp: async function (email, password, fullName) {
     const cleanEmail = (email || '').trim().toLowerCase();
     if (!cleanEmail || !password) {
@@ -87,20 +87,24 @@ const SupabaseAuthManager = {
           }
         });
 
-        if (error) {
-          console.warn("Supabase Auth Sign-Up error notice:", error);
-          if (error.message && error.message.toLowerCase().includes('already registered')) {
-            return this.signIn(cleanEmail, password);
-          }
-          const errMsg = extractErrorMessage(error);
-          alert("Sign Up Notice: " + errMsg);
-        } else if (data && data.user) {
+        // Instant login without email confirmation check
+        const signInRes = await this.client.auth.signInWithPassword({
+          email: cleanEmail,
+          password: password
+        });
+
+        const activeUser = (signInRes.data && signInRes.data.user) || (data && data.user);
+        if (activeUser) {
           sessionStorage.setItem('daily_invoicer_authenticated', 'true');
-          this.currentUser = data.user;
-          updateAuthUIState(data.user);
+          this.currentUser = activeUser;
+          updateAuthUIState(activeUser);
           unlockAppScreen();
-          this.syncUserInvoices(data.user.id);
-          return { success: true, user: data.user };
+          this.syncUserInvoices(activeUser.id);
+          return { success: true, user: activeUser };
+        }
+
+        if (error && !error.message.toLowerCase().includes('already registered')) {
+          console.warn("Supabase Auth Sign-Up notice:", error.message);
         }
       } catch (err) {
         console.warn("Supabase Sign-Up Exception:", err);
