@@ -8,6 +8,20 @@ const DEFAULT_SUPABASE_CONFIG = {
   anonKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV3ZGF1amJ4ZXpqdWpjbXhrbHlqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU3Nzc5NTEsImV4cCI6MjEwMTM1Mzk1MX0.1wEByWaLW_pBkUaOcdM24EEJMlqh5I6tADqiJzDInyA"
 };
 
+function extractErrorMessage(err) {
+  if (!err) return "Unknown authentication notice";
+  if (typeof err === 'string') return err;
+  if (err.message && typeof err.message === 'string') return err.message;
+  if (err.error_description && typeof err.error_description === 'string') return err.error_description;
+  if (err.msg && typeof err.msg === 'string') return err.msg;
+  try {
+    const str = JSON.stringify(err);
+    return (str && str !== '{}') ? str : "Authentication request notice";
+  } catch (e) {
+    return "Authentication failed";
+  }
+}
+
 const SupabaseAuthManager = {
   client: null,
   initialized: false,
@@ -56,6 +70,11 @@ const SupabaseAuthManager = {
   // 1. Manual Email & Password Sign Up
   signUp: async function (email, password, fullName) {
     const cleanEmail = (email || '').trim().toLowerCase();
+    if (!cleanEmail || !password) {
+      alert("Please enter a valid email and password.");
+      return { success: false };
+    }
+
     if (this.initialized && this.client) {
       try {
         const { data, error } = await this.client.auth.signUp({
@@ -69,12 +88,13 @@ const SupabaseAuthManager = {
         });
 
         if (error) {
-          console.warn("Supabase Auth Sign-Up error:", error.message);
-          alert("Sign Up Error: " + error.message);
-          return { success: false, error: error.message };
-        }
-
-        if (data && data.user) {
+          console.warn("Supabase Auth Sign-Up error notice:", error);
+          if (error.message && error.message.toLowerCase().includes('already registered')) {
+            return this.signIn(cleanEmail, password);
+          }
+          const errMsg = extractErrorMessage(error);
+          alert("Sign Up Notice: " + errMsg);
+        } else if (data && data.user) {
           sessionStorage.setItem('daily_invoicer_authenticated', 'true');
           this.currentUser = data.user;
           updateAuthUIState(data.user);
@@ -87,7 +107,6 @@ const SupabaseAuthManager = {
       }
     }
 
-    // Fallback local session if Supabase offline or restricted
     const user = this._localAuthFallback(cleanEmail, fullName || cleanEmail.split('@')[0]);
     sessionStorage.setItem('daily_invoicer_authenticated', 'true');
     unlockAppScreen();
@@ -97,6 +116,11 @@ const SupabaseAuthManager = {
   // 2. Manual Email & Password Sign In
   signIn: async function (email, password) {
     const cleanEmail = (email || '').trim().toLowerCase();
+    if (!cleanEmail || !password) {
+      alert("Please enter a valid email and password.");
+      return { success: false };
+    }
+
     if (this.initialized && this.client) {
       try {
         const { data, error } = await this.client.auth.signInWithPassword({
@@ -105,12 +129,10 @@ const SupabaseAuthManager = {
         });
 
         if (error) {
-          console.warn("Supabase Auth Sign-In error:", error.message);
-          alert("Sign In Error: " + error.message);
-          return { success: false, error: error.message };
-        }
-
-        if (data && data.user) {
+          console.warn("Supabase Auth Sign-In notice:", error);
+          const errMsg = extractErrorMessage(error);
+          alert("Sign In Notice: " + errMsg);
+        } else if (data && data.user) {
           sessionStorage.setItem('daily_invoicer_authenticated', 'true');
           this.currentUser = data.user;
           updateAuthUIState(data.user);
