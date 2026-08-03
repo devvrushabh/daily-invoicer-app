@@ -466,8 +466,8 @@ function saveCurrentInvoice() {
     invoicesList.unshift(currentInvoice);
   }
   saveInvoicesToStorage();
-  if (typeof FirebaseAuthManager !== 'undefined' && FirebaseAuthManager.currentUser) {
-    FirebaseAuthManager.saveUserInvoice(FirebaseAuthManager.currentUser.uid, currentInvoice);
+  if (typeof SupabaseAuthManager !== 'undefined') {
+    SupabaseAuthManager.saveInvoiceToCloud(currentInvoice);
   }
   renderSavedInvoicesList();
   updateHeaderStats();
@@ -491,8 +491,8 @@ function duplicateInvoice(id) {
     copy.number = copy.number + '-COPY';
     invoicesList.unshift(copy);
     saveInvoicesToStorage();
-    if (typeof FirebaseAuthManager !== 'undefined' && FirebaseAuthManager.currentUser) {
-      FirebaseAuthManager.saveUserInvoice(FirebaseAuthManager.currentUser.uid, copy);
+    if (typeof SupabaseAuthManager !== 'undefined') {
+      SupabaseAuthManager.saveInvoiceToCloud(copy);
     }
     renderSavedInvoicesList();
     updateHeaderStats();
@@ -503,8 +503,8 @@ function deleteInvoice(id) {
   if (confirm("Are you sure you want to delete this invoice?")) {
     invoicesList = invoicesList.filter(i => i.id !== id);
     saveInvoicesToStorage();
-    if (typeof FirebaseAuthManager !== 'undefined' && FirebaseAuthManager.currentUser) {
-      FirebaseAuthManager.deleteUserInvoice(FirebaseAuthManager.currentUser.uid, id);
+    if (typeof SupabaseAuthManager !== 'undefined') {
+      SupabaseAuthManager.deleteInvoiceFromCloud(id);
     }
     renderSavedInvoicesList();
     updateHeaderStats();
