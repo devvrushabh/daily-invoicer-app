@@ -754,24 +754,31 @@ input:focus, textarea:focus, select:focus {
 .card-actions-mini {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  width: 100%;
   gap: 4px;
+  width: 100%;
   margin-top: 4px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  padding-bottom: 2px;
+}
+
+.card-actions-mini::-webkit-scrollbar {
+  display: none;
 }
 
 .card-actions-mini .btn-xs {
-  flex: 1;
-  min-width: 0;
-  padding: 4px 6px;
-  font-size: 0.68rem;
+  flex: 1 0 auto;
+  min-width: max-content;
+  padding: 5px 8px;
+  font-size: 0.69rem;
   font-weight: 600;
   letter-spacing: 0.15px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 3px;
-  border-radius: 16px;
+  gap: 3.5px;
+  border-radius: 14px;
   white-space: nowrap;
   box-sizing: border-box;
 }
@@ -784,8 +791,6 @@ input:focus, textarea:focus, select:focus {
 }
 
 .card-actions-mini .btn-xs span {
-  overflow: hidden;
-  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
@@ -1491,9 +1496,9 @@ input:focus, textarea:focus, select:focus {
     font-size: 0.95rem;
   }
   .card-actions-mini .btn-xs {
-    padding: 4px 3px;
-    font-size: 0.64rem;
-    gap: 2px;
+    padding: 4px 6px;
+    font-size: 0.65rem;
+    gap: 2.5px;
     border-radius: 12px;
   }
   .card-actions-mini .btn-xs svg {
@@ -1510,8 +1515,8 @@ input:focus, textarea:focus, select:focus {
 
 @media (max-width: 360px) {
   .card-actions-mini .btn-xs {
-    padding: 3px 1px;
-    font-size: 0.6rem;
+    padding: 4px 5px;
+    font-size: 0.62rem;
     border-radius: 10px;
   }
 }

@@ -417,7 +417,7 @@ function renderSavedInvoicesList() {
           <button class="btn-xs secondary" onclick="downloadInvoicePDFById('${inv.id}')" title="Download PDF"><i data-lucide="download"></i> <span>PDF</span></button>
           <button class="btn-xs secondary" onclick="shareInvoicePDFById('${inv.id}')" title="Share Invoice on WhatsApp / Apps"><i data-lucide="share-2"></i> <span>Share</span></button>
           <button class="btn-xs secondary" onclick="duplicateInvoice('${inv.id}')" title="Copy Invoice"><i data-lucide="copy"></i> <span>Copy</span></button>
-          <button class="btn-xs danger" onclick="deleteInvoice('${inv.id}')" title="Delete Invoice"><i data-lucide="trash-2"></i> <span>Delete</span></button>
+          <button class="btn-xs danger" onclick="deleteInvoice('${inv.id}')" title="Delete Invoice"><i data-lucide="trash-2"></i> <span>Del</span></button>
         </div>
       </div>
     `;
